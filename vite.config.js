@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_ADDRESS = "http://10.10.10.30:3006";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -11,6 +12,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  server: {
+    proxy: {
+      "/api": {
+        target: SERVER_ADDRESS,
+        changeOrigin: true,
+      },
     },
   },
 });
