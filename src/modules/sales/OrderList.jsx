@@ -3,16 +3,13 @@ export default function OrderList({ orders, selectedId, onSelect }) {
     <table className="w-full text-sm">
       <thead className="sticky top-0 bg-slate-100 border-b border-gray-200">
         <tr>
-          <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide">
+          <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide w-14">
             Job #
           </th>
           <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide">
             Customer
           </th>
-          <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide">
-            PO Number
-          </th>
-          <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide">
+          <th className="text-left px-3 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wide w-20 shrink-0">
             Date
           </th>
         </tr>
@@ -28,15 +25,26 @@ export default function OrderList({ orders, selectedId, onSelect }) {
                 : "hover:bg-gray-50/70"
             }`}
           >
-            <td className="px-3 py-2.5 text-gray-800 font-medium">
+            <td className="px-3 py-2.5 text-gray-800 font-medium w-14">
               {order.jobNumber}
             </td>
-            <td className="px-3 py-2.5 text-gray-600">{order.customerName}</td>
-            <td className="px-3 py-2.5 text-gray-600">{order.poNumber}</td>
-            <td className="px-3 py-2.5 text-gray-500">{order.date}</td>
+            <td className="px-3 py-2.5 text-gray-600 max-w-0">
+              <div className="truncate">{order.customerName}</div>
+            </td>
+            <td className="px-3 py-2.5 text-gray-500 w-20 shrink-0 tabular-nums">
+              {formatDate(order.date)}
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
   );
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  // dateStr is YYYY-MM-DD — show as MM/DD/YY
+  const [y, m, d] = dateStr.split("-");
+  if (!m || !d) return dateStr;
+  return `${m}/${d}/${y.slice(2)}`;
 }

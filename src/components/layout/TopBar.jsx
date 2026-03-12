@@ -13,7 +13,7 @@ export default function TopBar() {
 
   return (
     <header className="h-12 bg-white shadow-sm flex items-center px-4">
-      <span className="text-sm font-medium text-gray-600">{title}</span>
+      <span className="text-base font-semibold text-gray-700">{title}</span>
     </header>
   );
 }

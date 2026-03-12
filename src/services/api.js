@@ -84,10 +84,11 @@ function normalizeOrderDetail(o) {
     quoteId: o.quoteId ?? "",
     lineItems,
     subtotal,
-    tax: 0,
-    taxRate: "",
+    tax: o.tax?.taxAmount ?? 0,
+    taxRate: o.tax?.taxPercent ? `${o.tax.taxPercent}%` : "0",
     freight: 0,
     grandTotal: o.totalAmount ?? subtotal,
+    total: o.tax?.totalWithTax ?? o.totalAmount ?? subtotal,
   };
 }
 

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 const searchOptions = [
   { value: "jobNumber", label: "Job Number" },
   { value: "customerName", label: "Customer Name" },
-  { value: "poNumber", label: "PO Number" },
 ];
 
 export default function FilterBar({ onFilter, onSearch, onClear }) {
@@ -33,7 +32,9 @@ export default function FilterBar({ onFilter, onSearch, onClear }) {
     <div className="flex items-center gap-3 flex-wrap">
       {/* Date range */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600 shrink-0">Start Date</label>
+        <label className="text-sm font-semibold text-gray-700 shrink-0">
+          Start Date
+        </label>
         <Input
           type="date"
           value={startDate}
@@ -42,7 +43,9 @@ export default function FilterBar({ onFilter, onSearch, onClear }) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600 shrink-0">End Date</label>
+        <label className="text-sm font-semibold text-gray-700 shrink-0">
+          End Date
+        </label>
         <Input
           type="date"
           value={endDate}
@@ -63,7 +66,9 @@ export default function FilterBar({ onFilter, onSearch, onClear }) {
 
       {/* Search */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600 shrink-0">Search by</label>
+        <label className="text-sm font-semibold text-gray-700 shrink-0">
+          Search by
+        </label>
         <select
           value={searchBy}
           onChange={(e) => setSearchBy(e.target.value)}
