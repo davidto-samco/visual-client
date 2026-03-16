@@ -167,6 +167,27 @@ export const inventoryApi = {
     return { results: results.map(normalizePart), meta: json.meta ?? {} };
   },
 
+  /** Fetch all pages of search results */
+  async searchAllParts(partNumber, { limit = 50 } = {}) {
+    const firstPage = await this.searchParts(partNumber, { page: 1, limit });
+    const allResults = [...firstPage.results];
+    const totalPages = firstPage.meta.totalPages ?? 1;
+
+    // Fetch remaining pages in parallel
+    if (totalPages > 1) {
+      const pagePromises = [];
+      for (let page = 2; page <= totalPages; page++) {
+        pagePromises.push(this.searchParts(partNumber, { page, limit }));
+      }
+      const pages = await Promise.all(pagePromises);
+      for (const p of pages) {
+        allResults.push(...p.results);
+      }
+    }
+
+    return allResults;
+  },
+
   async getPart(partId) {
     const json = await request(
       `/api/inventory/parts/${encodeURIComponent(partId)}`,

@@ -4,6 +4,8 @@ import PartSearch from "./PartSearch";
 import PartDetail from "./PartDetail";
 import { inventoryApi } from "@/services/api";
 
+const RESULTS_PER_PAGE = 15;
+
 export default function InventoryPage() {
   const { partNumber: urlPartNumber } = useParams();
   const navigate = useNavigate();
@@ -14,6 +16,12 @@ export default function InventoryPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(searchResults.length / RESULTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+  const paginatedResults = searchResults.slice(startIndex, startIndex + RESULTS_PER_PAGE);
 
   // If URL contains a part number on load, fetch it directly
   useEffect(() => {
@@ -44,10 +52,11 @@ export default function InventoryPage() {
     setHasSearched(true);
     setPart(null);
     setSearchResults([]);
+    setCurrentPage(1);
     navigate("/inventory", { replace: true });
 
     try {
-      const { results } = await inventoryApi.searchParts(query.trim());
+      const results = await inventoryApi.searchAllParts(query.trim());
       setSearchResults(results);
     } catch (err) {
       setError(err.message);
@@ -74,11 +83,16 @@ export default function InventoryPage() {
       {/* Multiple results list */}
       {!detailLoading && searchResults.length > 0 && (
         <div className="border rounded-md overflow-hidden bg-white">
-          <div className="bg-slate-50 border-b px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {searchResults.length} results — click to view
+          <div className="bg-slate-50 border-b px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center justify-between">
+            <span>{searchResults.length} results — click to view</span>
+            {totalPages > 1 && (
+              <span className="text-gray-400">
+                Page {currentPage} of {totalPages}
+              </span>
+            )}
           </div>
-          <ul className="divide-y divide-gray-100 max-h-64 overflow-auto">
-            {searchResults.map((r) => (
+          <ul className="divide-y divide-gray-100">
+            {paginatedResults.map((r) => (
               <li
                 key={r.partNumber}
                 onClick={() => handleSelectResult(r.partNumber)}
@@ -94,6 +108,27 @@ export default function InventoryPage() {
               </li>
             ))}
           </ul>
+          {totalPages > 1 && (
+            <div className="bg-slate-50 border-t px-3 py-2 flex items-center justify-between">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-gray-500">
+                Showing {startIndex + 1}–{Math.min(startIndex + RESULTS_PER_PAGE, searchResults.length)} of {searchResults.length}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
 
