@@ -11,6 +11,7 @@ export default function SalesPage() {
   const [listLoading, setListLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeFilters, setActiveFilters] = useState({});
 
   // Load recent orders on mount
   useEffect(() => {
@@ -43,45 +44,57 @@ export default function SalesPage() {
     }
   }
 
-  const handleFilter = useCallback(async (startDate, endDate) => {
-    setListLoading(true);
-    setError(null);
-    try {
-      const { records } = await salesApi.searchOrders({ startDate, endDate });
-      setOrders(records);
-      setSelectedOrderId(records[0]?.id ?? null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setListLoading(false);
-    }
-  }, []);
+  const handleFilter = useCallback(
+    async (startDate, endDate) => {
+      const filters = { ...activeFilters, startDate, endDate };
+      setActiveFilters(filters);
+      setListLoading(true);
+      setError(null);
+      try {
+        const { records } = await salesApi.searchOrders(filters);
+        setOrders(records);
+        setSelectedOrderId(records[0]?.id ?? null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setListLoading(false);
+      }
+    },
+    [activeFilters],
+  );
 
-  const handleSearch = useCallback(async (searchBy, query) => {
-    if (!query.trim()) return;
-    const q = query.trim();
+  const handleSearch = useCallback(
+    async (searchBy, query) => {
+      if (!query.trim()) return;
+      const q = query.trim();
 
-    // Job number → go directly to detail
-    if (searchBy === "jobNumber") {
-      setSelectedOrderId(q.toUpperCase());
-      return;
-    }
+      if (searchBy === "jobNumber") {
+        setSelectedOrderId(q.toUpperCase());
+        return;
+      }
 
-    setListLoading(true);
-    setError(null);
-    try {
-      const params = searchBy === "customerName" ? { customerName: q } : {};
-      const { records } = await salesApi.searchOrders(params);
-      setOrders(records);
-      setSelectedOrderId(records[0]?.id ?? null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setListLoading(false);
-    }
-  }, []);
+      const filters = {
+        ...activeFilters,
+        ...(searchBy === "customerName" ? { customerName: q } : {}),
+      };
+      setActiveFilters(filters);
+      setListLoading(true);
+      setError(null);
+      try {
+        const { records } = await salesApi.searchOrders(filters);
+        setOrders(records);
+        setSelectedOrderId(records[0]?.id ?? null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setListLoading(false);
+      }
+    },
+    [activeFilters],
+  );
 
   const handleClear = useCallback(() => {
+    setActiveFilters({});
     loadRecentOrders();
   }, []);
 
