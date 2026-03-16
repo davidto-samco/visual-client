@@ -1,6 +1,36 @@
 import { useState, useEffect } from "react";
 import { inventoryApi } from "@/services/api";
 
+const COLUMNS = [
+  {
+    key: "workOrderMaster",
+    label: "Work Order / Master",
+    className: "text-blue-700 font-medium",
+  },
+  { key: "seqNo", label: "Seq #", className: "text-gray-700 tabular-nums" },
+  { key: "pieceNo", label: "Piece #", className: "text-gray-700 tabular-nums" },
+  {
+    key: "formattedQtyPer",
+    label: "Quantity Per",
+    className: "text-gray-700 tabular-nums",
+  },
+  {
+    key: "formattedScrapPercent",
+    label: "Scrap %",
+    className: "text-gray-700 tabular-nums",
+  },
+  {
+    key: "formattedFixedQty",
+    label: "Fixed Qty",
+    className: "text-gray-700 tabular-nums",
+  },
+  {
+    key: "unitOfMeasure",
+    label: "Unit of Measure",
+    className: "text-gray-700",
+  },
+];
+
 export default function WhereUsedTab({ part }) {
   const [records, setRecords] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -31,7 +61,6 @@ export default function WhereUsedTab({ part }) {
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
@@ -67,19 +96,12 @@ export default function WhereUsedTab({ part }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-100 border-b">
-              {[
-                "Work Order",
-                "Lot",
-                "Sub",
-                "Description",
-                "Qty Required",
-                "Status",
-              ].map((h) => (
+              {COLUMNS.map((col) => (
                 <th
-                  key={h}
-                  className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide"
+                  key={col.key}
+                  className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap"
                 >
-                  {h}
+                  {col.label}
                 </th>
               ))}
             </tr>
@@ -92,34 +114,11 @@ export default function WhereUsedTab({ part }) {
                   i % 2 === 0 ? "bg-white" : "bg-slate-50"
                 }`}
               >
-                <td className="px-3 py-2 font-medium text-blue-700">
-                  {r.baseId ?? r.workOrderBaseId ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-gray-700">
-                  {r.lotId ?? r.workOrderLotId ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-gray-700">
-                  {r.subId ?? r.workOrderSubId ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-gray-700 max-w-xs truncate">
-                  {r.description ?? r.partDescription ?? ""}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-gray-700">
-                  {Number(r.qtyRequired ?? r.calcQty ?? r.qty ?? 0).toFixed(4)}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
-                      r.status === "C"
-                        ? "bg-gray-100 text-gray-500"
-                        : r.status === "R"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {r.status ?? "—"}
-                  </span>
-                </td>
+                {COLUMNS.map((col) => (
+                  <td key={col.key} className={`px-3 py-2 ${col.className}`}>
+                    {r[col.key] ?? "—"}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

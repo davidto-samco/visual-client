@@ -4,7 +4,7 @@ export default function GeneralInfoCard({ part }) {
       <h3 className="font-semibold">General Information</h3>
       <Row label="Part Type" value={part.partType} />
       <Row label="Unit of Measure" value={part.uom} />
-      <Row label="Material Code" value={part.materialCode} />
+      <Row label="Commodity Code" value={part.materialCode} />
       <Row label="Drawing ID" value={part.drawingId} />
       <Row label="Drawing Rev" value={part.drawingRev} />
       <Row label="Weight" value={part.weight} />
