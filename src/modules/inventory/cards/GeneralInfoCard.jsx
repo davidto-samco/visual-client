@@ -11,3 +11,12 @@ export default function GeneralInfoCard({ part }) {
     </div>
   );
 }
+
+function Row({ label, value }) {
+  return (
+    <div className="flex">
+      <span className="w-36 text-gray-500 shrink-0">{label}</span>
+      <span className="text-gray-900">{value}</span>
+    </div>
+  );
+}

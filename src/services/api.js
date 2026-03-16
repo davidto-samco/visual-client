@@ -136,25 +136,25 @@ export const salesApi = {
 
 function normalizePart(p) {
   return {
-    partNumber: p.partId ?? p.partNumber ?? "",
+    partNumber: p.id ?? p.partId ?? "", // server returns "id"
     description: p.description ?? "",
-    partType: p.type ?? p.partType ?? "",
-    uom: p.unitOfMeasure ?? p.uom ?? "",
-    materialCode: p.materialCode ?? "",
-    drawingId: p.drawingId ?? "",
-    drawingRev: p.drawingRevision ?? p.drawingRev ?? "",
-    weight: p.weight != null ? String(p.weight) : "",
-    materialCost: p.materialCost ?? 0,
-    laborCost: p.laborCost ?? 0,
-    burdenCost: p.burdenCost ?? 0,
-    totalCost: p.totalCost ?? 0,
+    partType: p.partType ?? p.type ?? "",
+    uom: p.unitOfMeasure ?? "",
+    materialCode: p.commodityCode ?? "", // server returns "commodityCode"
+    drawingId: p.drawingNumber ?? "", // server returns "drawingNumber"
+    drawingRev: p.drawingRevision ?? "",
+    weight: "",
+    materialCost: p.unitMaterialCost ?? 0, // server returns "unitMaterialCost"
+    laborCost: p.unitLaborCost ?? 0,
+    burdenCost: p.unitBurdenCost ?? 0,
+    totalCost: p.totalUnitCost ?? 0, // server returns "totalUnitCost"
     unitPrice: p.unitPrice ?? 0,
-    onHand: p.qtyOnHand ?? p.onHand ?? 0,
-    available: p.qtyAvailable ?? p.available ?? 0,
-    onOrder: p.qtyOnOrder ?? p.onOrder ?? 0,
-    inDemand: p.qtyInDemand ?? p.inDemand ?? 0,
-    preferredVendor: p.preferredVendorName ?? p.preferredVendor ?? "",
-    vendorId: p.preferredVendorId ?? p.vendorId ?? "",
+    onHand: p.qtyOnHand ?? 0,
+    available: p.qtyAvailable ?? 0,
+    onOrder: p.qtyOnOrder ?? 0,
+    inDemand: p.qtyInDemand ?? 0,
+    preferredVendor: p.preferredVendorName ?? "",
+    vendorId: p.preferredVendorId ?? "",
     status: p.status ?? "",
   };
 }

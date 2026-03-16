@@ -44,17 +44,11 @@ export default function InventoryPage() {
     setHasSearched(true);
     setPart(null);
     setSearchResults([]);
+    navigate("/inventory", { replace: true });
 
     try {
       const { results } = await inventoryApi.searchParts(query.trim());
-
-      if (results.length === 1) {
-        // Exact / single match — jump straight to detail
-        navigate(`/inventory/${results[0].partNumber}`, { replace: true });
-        await fetchPart(results[0].partNumber);
-      } else {
-        setSearchResults(results);
-      }
+      setSearchResults(results);
     } catch (err) {
       setError(err.message);
     } finally {
