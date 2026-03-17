@@ -235,6 +235,68 @@ function normalizeBOMNode(node) {
   };
 }
 
+/**
+ * Recursively convert detailed tree nodes from server shape → BOMTree shape.
+ * Preserves nodeType so the UI can color-code OP vs MAT vs WO.
+ *
+ * Detailed server nodes have nodeType: "WO" | "OP" | "MAT"
+ *   WO  → formattedId + partDescription, orderQty, dates
+ *   OP  → formattedDescription (seq + resource), no quantity
+ *   MAT → formattedPart (partId - description), qty, dimensions
+ */
+function normalizeDetailedBOMNode(node) {
+  const nodeType = node.nodeType ?? "WO";
+
+  let label = "";
+  let quantity = null;
+  let details = node.formattedStatus ?? node.status ?? "";
+  let dateRange = "";
+  let id = "";
+
+  switch (nodeType) {
+    case "WO": {
+      const labelParts = [node.formattedId];
+      if (node.partDescription) labelParts.push(node.partDescription);
+      label = labelParts.join(" - ");
+      quantity = node.orderQty ?? null;
+      const dates = [node.startDate, node.finishDate]
+        .filter(Boolean)
+        .map((d) => d.substring(0, 10));
+      dateRange = dates.join(" → ");
+      id = `wo-${node.subId ?? node.formattedId ?? Math.random().toString(36)}`;
+      break;
+    }
+    case "OP": {
+      label = node.formattedDescription ?? `OP ${node.opSeq}`;
+      id = `op-${node.subId}-${node.opSeq}`;
+      break;
+    }
+    case "MAT": {
+      label =
+        node.formattedPart ??
+        `${node.partId ?? "?"} - ${node.partDescription ?? "Unknown"}`;
+      quantity = node.qty ?? null;
+      details = node.dimensions ?? details;
+      id = `mat-${node.subId}-${node.opSeq}-${node.pieceNo}`;
+      break;
+    }
+    default: {
+      label = node.formattedId ?? "Unknown";
+      id = Math.random().toString(36);
+    }
+  }
+
+  return {
+    id,
+    nodeType,
+    label,
+    quantity,
+    details,
+    dateRange,
+    children: (node.children ?? []).map(normalizeDetailedBOMNode),
+  };
+}
+
 export const engineeringApi = {
   async searchWorkOrders(baseId, { page = 1, limit = 50 } = {}) {
     const params = new URLSearchParams({ baseId, page, limit });
@@ -245,7 +307,7 @@ export const engineeringApi = {
     };
   },
 
-  /** Returns a BOMTree-compatible tree or null */
+  /** Returns a simplified BOMTree-compatible tree or null */
   async getWorkOrderTree(baseId, lotId) {
     const json = await request(
       `/api/engineering/work-orders/${encodeURIComponent(baseId)}/${encodeURIComponent(lotId)}/tree/simplified`,
@@ -253,5 +315,14 @@ export const engineeringApi = {
     // data = { tree: {...}, totalWorkOrders: N }
     const tree = json.data?.tree ?? null;
     return tree ? normalizeBOMNode(tree) : null;
+  },
+
+  /** Returns a detailed BOMTree-compatible tree or null */
+  async getDetailedWorkOrderTree(baseId, lotId) {
+    const json = await request(
+      `/api/engineering/work-orders/${encodeURIComponent(baseId)}/${encodeURIComponent(lotId)}/tree/detailed`,
+    );
+    const tree = json.data?.tree ?? null;
+    return tree ? normalizeDetailedBOMNode(tree) : null;
   },
 };

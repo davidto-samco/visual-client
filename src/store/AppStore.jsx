@@ -21,9 +21,12 @@ export function AppStoreProvider({ children }) {
   // ── Engineering ───────────────────────────────────────────────────────────
   const [engineeringSearchResults, setEngineeringSearchResults] = useState([]);
   const [engineeringSelectedWO, setEngineeringSelectedWO] = useState(null);
-  const [engineeringTreeData, setEngineeringTreeData] = useState(null);
+  const [engineeringSimplifiedTree, setEngineeringSimplifiedTree] =
+    useState(null);
+  const [engineeringDetailedTree, setEngineeringDetailedTree] = useState(null);
   const [engineeringLastQuery, setEngineeringLastQuery] = useState("");
   const [engineeringHasSearched, setEngineeringHasSearched] = useState(false);
+  const [engineeringTreeMode, setEngineeringTreeMode] = useState("simplified");
 
   return (
     <AppStoreContext.Provider
@@ -57,12 +60,16 @@ export function AppStoreProvider({ children }) {
         setEngineeringSearchResults,
         engineeringSelectedWO,
         setEngineeringSelectedWO,
-        engineeringTreeData,
-        setEngineeringTreeData,
+        engineeringSimplifiedTree,
+        setEngineeringSimplifiedTree,
+        engineeringDetailedTree,
+        setEngineeringDetailedTree,
         engineeringLastQuery,
         setEngineeringLastQuery,
         engineeringHasSearched,
         setEngineeringHasSearched,
+        engineeringTreeMode,
+        setEngineeringTreeMode,
       }}
     >
       {children}

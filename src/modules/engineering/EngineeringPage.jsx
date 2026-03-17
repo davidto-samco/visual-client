@@ -11,18 +11,42 @@ export default function EngineeringPage() {
     setEngineeringSearchResults,
     engineeringSelectedWO,
     setEngineeringSelectedWO,
-    engineeringTreeData,
-    setEngineeringTreeData,
+    engineeringSimplifiedTree,
+    setEngineeringSimplifiedTree,
+    engineeringDetailedTree,
+    setEngineeringDetailedTree,
     engineeringLastQuery,
     setEngineeringLastQuery,
     engineeringHasSearched,
     setEngineeringHasSearched,
+    engineeringTreeMode,
+    setEngineeringTreeMode,
   } = useAppStore();
 
-  // Local-only — no need to persist loading/error across navigation
   const [searchLoading, setSearchLoading] = useState(false);
   const [treeLoading, setTreeLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Separate drill-down depth per mode so switching preserves each tree's state
+  const [expandedDepths, setExpandedDepths] = useState({
+    simplified: 1,
+    detailed: 1,
+  });
+  const expandedDepth = expandedDepths[engineeringTreeMode];
+  const setExpandedDepth = (valOrFn) =>
+    setExpandedDepths((prev) => ({
+      ...prev,
+      [engineeringTreeMode]:
+        typeof valOrFn === "function"
+          ? valOrFn(prev[engineeringTreeMode])
+          : valOrFn,
+    }));
+
+  // The tree currently shown based on active mode
+  const activeTree =
+    engineeringTreeMode === "detailed"
+      ? engineeringDetailedTree
+      : engineeringSimplifiedTree;
 
   async function handleSearch() {
     const q = engineeringLastQuery.trim();
@@ -31,15 +55,17 @@ export default function EngineeringPage() {
     setSearchLoading(true);
     setError(null);
     setEngineeringHasSearched(true);
-    setEngineeringTreeData(null);
+    setEngineeringSimplifiedTree(null);
+    setEngineeringDetailedTree(null);
     setEngineeringSelectedWO(null);
     setEngineeringSearchResults([]);
+    setExpandedDepths({ simplified: 1, detailed: 1 });
 
     try {
       const { records } = await engineeringApi.searchWorkOrders(q);
       setEngineeringSearchResults(records);
       if (records.length === 1) {
-        await loadTree(records[0]);
+        await loadTree(records[0], engineeringTreeMode);
       }
     } catch (err) {
       setError(err.message);
@@ -48,19 +74,54 @@ export default function EngineeringPage() {
     }
   }
 
-  async function loadTree(wo) {
-    setEngineeringSelectedWO(wo);
+  /** Fetch tree for the given mode and cache it. */
+  async function fetchAndCacheTree(wo, mode) {
     setTreeLoading(true);
     setError(null);
     try {
-      const tree = await engineeringApi.getWorkOrderTree(wo.baseId, wo.lotId);
-      setEngineeringTreeData(tree);
+      if (mode === "detailed") {
+        const tree = await engineeringApi.getDetailedWorkOrderTree(
+          wo.baseId,
+          wo.lotId,
+        );
+        setEngineeringDetailedTree(tree);
+      } else {
+        const tree = await engineeringApi.getWorkOrderTree(wo.baseId, wo.lotId);
+        setEngineeringSimplifiedTree(tree);
+      }
     } catch (err) {
       setError(`Could not load tree: ${err.message}`);
-      setEngineeringTreeData(null);
     } finally {
       setTreeLoading(false);
     }
+  }
+
+  /** Load tree when selecting a WO from search results. */
+  async function loadTree(wo, mode) {
+    setEngineeringSelectedWO(wo);
+    setEngineeringSimplifiedTree(null);
+    setEngineeringDetailedTree(null);
+    setExpandedDepths({ simplified: 1, detailed: 1 });
+    await fetchAndCacheTree(wo, mode);
+  }
+
+  /** Toggle between simplified ↔ detailed. Only fetches if not already cached. */
+  async function handleToggleMode(newMode) {
+    if (newMode === engineeringTreeMode) return;
+    setEngineeringTreeMode(newMode);
+
+    if (!engineeringSelectedWO) return;
+
+    // Check if the target mode's tree is already cached
+    const cached =
+      newMode === "detailed"
+        ? engineeringDetailedTree
+        : engineeringSimplifiedTree;
+
+    if (!cached) {
+      await fetchAndCacheTree(engineeringSelectedWO, newMode);
+    }
+    // If cached, switching the mode state is enough — activeTree updates automatically
   }
 
   return (
@@ -83,6 +144,32 @@ export default function EngineeringPage() {
         >
           {searchLoading ? "Searching…" : "Search"}
         </Button>
+
+        {/* Simplified / Detailed toggle */}
+        <div className="ml-auto flex items-center gap-1 bg-slate-100 rounded-md p-0.5">
+          <button
+            onClick={() => handleToggleMode("simplified")}
+            disabled={treeLoading}
+            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+              engineeringTreeMode === "simplified"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Simplified
+          </button>
+          <button
+            onClick={() => handleToggleMode("detailed")}
+            disabled={treeLoading}
+            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+              engineeringTreeMode === "detailed"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Detailed
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -91,7 +178,7 @@ export default function EngineeringPage() {
         </div>
       )}
 
-      {engineeringSearchResults.length > 1 && !engineeringTreeData && (
+      {engineeringSearchResults.length > 1 && !activeTree && !treeLoading && (
         <div className="mb-3 border rounded-md overflow-hidden bg-white">
           <div className="bg-slate-50 border-b px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
             {engineeringSearchResults.length} work orders — click to load tree
@@ -100,7 +187,7 @@ export default function EngineeringPage() {
             {engineeringSearchResults.map((wo, i) => (
               <li
                 key={i}
-                onClick={() => loadTree(wo)}
+                onClick={() => loadTree(wo, engineeringTreeMode)}
                 className="px-3 py-2 cursor-pointer hover:bg-blue-50 flex items-center gap-4 text-sm"
               >
                 <span className="font-medium text-blue-700 w-36 shrink-0">
@@ -134,18 +221,23 @@ export default function EngineeringPage() {
             Loading BOM tree…
           </div>
         )}
-        {!treeLoading && engineeringTreeData && (
-          <BOMTree data={engineeringTreeData} />
+        {!treeLoading && activeTree && (
+          <BOMTree
+            data={activeTree}
+            mode={engineeringTreeMode}
+            expandedDepth={expandedDepth}
+            onExpandedDepthChange={setExpandedDepth}
+          />
         )}
         {!treeLoading &&
-          !engineeringTreeData &&
+          !activeTree &&
           engineeringHasSearched &&
           engineeringSearchResults.length === 0 && (
             <div className="flex items-center justify-center h-full text-sm text-gray-400">
               No work orders found
             </div>
           )}
-        {!treeLoading && !engineeringTreeData && !engineeringHasSearched && (
+        {!treeLoading && !activeTree && !engineeringHasSearched && (
           <div className="flex items-center justify-center h-full text-sm text-gray-400">
             Search for a work order to view its BOM tree
           </div>
@@ -154,7 +246,7 @@ export default function EngineeringPage() {
 
       <div className="mt-1 text-xs text-gray-500 px-1">
         {engineeringSelectedWO
-          ? `Showing: ${engineeringSelectedWO.formattedId}`
+          ? `Showing: ${engineeringSelectedWO.formattedId} (${engineeringTreeMode})`
           : engineeringHasSearched
             ? `${engineeringSearchResults.length} result(s)`
             : ""}
