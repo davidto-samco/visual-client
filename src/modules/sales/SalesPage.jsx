@@ -1,66 +1,78 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import OrderList from "./OrderList";
 import OrderDetail from "./OrderDetail";
 import FilterBar from "./FilterBar";
 import { salesApi } from "@/services/api";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function SalesPage() {
-  const [orders, setOrders] = useState([]);
-  const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [listLoading, setListLoading] = useState(true);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [activeFilters, setActiveFilters] = useState({});
+  const {
+    salesOrders,
+    setSalesOrders,
+    salesSelectedOrderId,
+    setSalesSelectedOrderId,
+    salesSelectedOrder,
+    setSalesSelectedOrder,
+    salesActiveFilters,
+    setSalesActiveFilters,
+    salesListLoading,
+    setSalesListLoading,
+    salesInitialized,
+    setSalesInitialized,
+  } = useAppStore();
 
-  // Load recent orders on mount
+  // Only load on first visit — skip if already initialized
   useEffect(() => {
-    loadRecentOrders();
+    if (!salesInitialized) {
+      loadRecentOrders();
+    }
   }, []);
 
   // Load full order detail whenever selection changes
   useEffect(() => {
-    if (!selectedOrderId) return;
-    setDetailLoading(true);
-    setSelectedOrder(null);
+    if (!salesSelectedOrderId) return;
+    // Already have this order loaded — skip
+    if (salesSelectedOrder?.jobNumber === salesSelectedOrderId) return;
+
+    setSalesSelectedOrder(null);
     salesApi
-      .getOrder(selectedOrderId)
-      .then(setSelectedOrder)
-      .catch((err) => setError(err.message))
-      .finally(() => setDetailLoading(false));
-  }, [selectedOrderId]);
+      .getOrder(salesSelectedOrderId)
+      .then(setSalesSelectedOrder)
+      .catch(() => {});
+  }, [salesSelectedOrderId]);
 
   async function loadRecentOrders() {
-    setListLoading(true);
-    setError(null);
+    setSalesListLoading(true);
     try {
       const records = await salesApi.getRecentOrders(200);
-      setOrders(records);
-      if (records.length > 0) setSelectedOrderId(records[0].id);
-    } catch (err) {
-      setError(err.message);
+      setSalesOrders(records);
+      if (records.length > 0 && !salesSelectedOrderId) {
+        setSalesSelectedOrderId(records[0].id);
+      }
+      setSalesInitialized(true);
+    } catch {
+      // silently fail
     } finally {
-      setListLoading(false);
+      setSalesListLoading(false);
     }
   }
 
   const handleFilter = useCallback(
     async (startDate, endDate) => {
-      const filters = { ...activeFilters, startDate, endDate };
-      setActiveFilters(filters);
-      setListLoading(true);
-      setError(null);
+      const filters = { ...salesActiveFilters, startDate, endDate };
+      setSalesActiveFilters(filters);
+      setSalesListLoading(true);
       try {
         const { records } = await salesApi.searchOrders(filters);
-        setOrders(records);
-        setSelectedOrderId(records[0]?.id ?? null);
-      } catch (err) {
-        setError(err.message);
+        setSalesOrders(records);
+        setSalesSelectedOrderId(records[0]?.id ?? null);
+      } catch {
+        // silently fail
       } finally {
-        setListLoading(false);
+        setSalesListLoading(false);
       }
     },
-    [activeFilters],
+    [salesActiveFilters],
   );
 
   const handleSearch = useCallback(
@@ -69,32 +81,32 @@ export default function SalesPage() {
       const q = query.trim();
 
       if (searchBy === "jobNumber") {
-        setSelectedOrderId(q.toUpperCase());
+        setSalesSelectedOrderId(q.toUpperCase());
         return;
       }
 
       const filters = {
-        ...activeFilters,
+        ...salesActiveFilters,
         ...(searchBy === "customerName" ? { customerName: q } : {}),
       };
-      setActiveFilters(filters);
-      setListLoading(true);
-      setError(null);
+      setSalesActiveFilters(filters);
+      setSalesListLoading(true);
       try {
         const { records } = await salesApi.searchOrders(filters);
-        setOrders(records);
-        setSelectedOrderId(records[0]?.id ?? null);
-      } catch (err) {
-        setError(err.message);
+        setSalesOrders(records);
+        setSalesSelectedOrderId(records[0]?.id ?? null);
+      } catch {
+        // silently fail
       } finally {
-        setListLoading(false);
+        setSalesListLoading(false);
       }
     },
-    [activeFilters],
+    [salesActiveFilters],
   );
 
   const handleClear = useCallback(() => {
-    setActiveFilters({});
+    setSalesActiveFilters({});
+    setSalesInitialized(false); // force reload
     loadRecentOrders();
   }, []);
 
@@ -106,39 +118,29 @@ export default function SalesPage() {
         onClear={handleClear}
       />
 
-      {error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
-          {error}
-        </div>
-      )}
-
       <div className="flex-1 flex gap-3 min-h-0">
-        {/* Order list panel */}
         <div className="w-80 shrink-0 overflow-auto border rounded-md bg-white">
-          {listLoading ? (
+          {salesListLoading ? (
             <div className="p-6 text-sm text-gray-400 text-center">
               Loading orders…
             </div>
           ) : (
             <OrderList
-              orders={orders}
-              selectedId={selectedOrderId}
-              onSelect={setSelectedOrderId}
+              orders={salesOrders}
+              selectedId={salesSelectedOrderId}
+              onSelect={setSalesSelectedOrderId}
             />
           )}
         </div>
 
-        {/* Order detail panel */}
         <div className="flex-1 overflow-auto border rounded-md bg-white relative">
-          {detailLoading && (
+          {!salesSelectedOrder && salesSelectedOrderId && (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 bg-white">
               Loading order…
             </div>
           )}
-          {!detailLoading && selectedOrder && (
-            <OrderDetail order={selectedOrder} />
-          )}
-          {!detailLoading && !selectedOrder && !selectedOrderId && (
+          {salesSelectedOrder && <OrderDetail order={salesSelectedOrder} />}
+          {!salesSelectedOrder && !salesSelectedOrderId && (
             <div className="flex items-center justify-center h-full text-sm text-gray-400">
               Select an order to view details
             </div>

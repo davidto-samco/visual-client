@@ -3,33 +3,41 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import BOMTree from "./BOMTree";
 import { engineeringApi } from "@/services/api";
+import { useAppStore } from "@/store/useAppStore";
 
 export default function EngineeringPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedWO, setSelectedWO] = useState(null);
-  const [treeData, setTreeData] = useState(null);
+  const {
+    engineeringSearchResults,
+    setEngineeringSearchResults,
+    engineeringSelectedWO,
+    setEngineeringSelectedWO,
+    engineeringTreeData,
+    setEngineeringTreeData,
+    engineeringLastQuery,
+    setEngineeringLastQuery,
+    engineeringHasSearched,
+    setEngineeringHasSearched,
+  } = useAppStore();
+
+  // Local-only — no need to persist loading/error across navigation
   const [searchLoading, setSearchLoading] = useState(false);
   const [treeLoading, setTreeLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false);
 
   async function handleSearch() {
-    const q = searchQuery.trim();
+    const q = engineeringLastQuery.trim();
     if (!q) return;
 
     setSearchLoading(true);
     setError(null);
-    setHasSearched(true);
-    setTreeData(null);
-    setSelectedWO(null);
-    setSearchResults([]);
+    setEngineeringHasSearched(true);
+    setEngineeringTreeData(null);
+    setEngineeringSelectedWO(null);
+    setEngineeringSearchResults([]);
 
     try {
       const { records } = await engineeringApi.searchWorkOrders(q);
-      setSearchResults(records);
-
-      // Auto-select if only one result
+      setEngineeringSearchResults(records);
       if (records.length === 1) {
         await loadTree(records[0]);
       }
@@ -41,15 +49,15 @@ export default function EngineeringPage() {
   }
 
   async function loadTree(wo) {
-    setSelectedWO(wo);
+    setEngineeringSelectedWO(wo);
     setTreeLoading(true);
     setError(null);
     try {
       const tree = await engineeringApi.getWorkOrderTree(wo.baseId, wo.lotId);
-      setTreeData(tree);
+      setEngineeringTreeData(tree);
     } catch (err) {
       setError(`Could not load tree: ${err.message}`);
-      setTreeData(null);
+      setEngineeringTreeData(null);
     } finally {
       setTreeLoading(false);
     }
@@ -57,22 +65,21 @@ export default function EngineeringPage() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Search bar */}
       <div className="flex items-center gap-3 mb-3">
         <label className="text-sm font-medium text-gray-700 shrink-0">
           Work Order:
         </label>
         <Input
           placeholder="Enter base ID (e.g., 8113)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={engineeringLastQuery}
+          onChange={(e) => setEngineeringLastQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           className="max-w-sm"
           disabled={searchLoading}
         />
         <Button
           onClick={handleSearch}
-          disabled={searchLoading || !searchQuery.trim()}
+          disabled={searchLoading || !engineeringLastQuery.trim()}
         >
           {searchLoading ? "Searching…" : "Search"}
         </Button>
@@ -84,14 +91,13 @@ export default function EngineeringPage() {
         </div>
       )}
 
-      {/* Multiple results list */}
-      {searchResults.length > 1 && !treeData && (
+      {engineeringSearchResults.length > 1 && !engineeringTreeData && (
         <div className="mb-3 border rounded-md overflow-hidden bg-white">
           <div className="bg-slate-50 border-b px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-            {searchResults.length} work orders — click to load tree
+            {engineeringSearchResults.length} work orders — click to load tree
           </div>
           <ul className="divide-y divide-gray-100 max-h-48 overflow-auto">
-            {searchResults.map((wo, i) => (
+            {engineeringSearchResults.map((wo, i) => (
               <li
                 key={i}
                 onClick={() => loadTree(wo)}
@@ -122,35 +128,35 @@ export default function EngineeringPage() {
         </div>
       )}
 
-      {/* BOM Tree */}
       <div className="flex-1 border rounded bg-white overflow-auto relative">
         {treeLoading && (
           <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
             Loading BOM tree…
           </div>
         )}
-        {!treeLoading && treeData && <BOMTree data={treeData} />}
+        {!treeLoading && engineeringTreeData && (
+          <BOMTree data={engineeringTreeData} />
+        )}
         {!treeLoading &&
-          !treeData &&
-          hasSearched &&
-          searchResults.length === 0 && (
+          !engineeringTreeData &&
+          engineeringHasSearched &&
+          engineeringSearchResults.length === 0 && (
             <div className="flex items-center justify-center h-full text-sm text-gray-400">
               No work orders found
             </div>
           )}
-        {!treeLoading && !treeData && !hasSearched && (
+        {!treeLoading && !engineeringTreeData && !engineeringHasSearched && (
           <div className="flex items-center justify-center h-full text-sm text-gray-400">
             Search for a work order to view its BOM tree
           </div>
         )}
       </div>
 
-      {/* Status bar */}
       <div className="mt-1 text-xs text-gray-500 px-1">
-        {selectedWO
-          ? `Showing: ${selectedWO.formattedId}`
-          : hasSearched
-            ? `${searchResults.length} result(s)`
+        {engineeringSelectedWO
+          ? `Showing: ${engineeringSelectedWO.formattedId}`
+          : engineeringHasSearched
+            ? `${engineeringSearchResults.length} result(s)`
             : ""}
       </div>
     </div>
