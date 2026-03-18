@@ -19,6 +19,66 @@ function getNodeColorClasses(nodeType) {
   }
 }
 
+/**
+ * Build the label JSX from separate fields.
+ *
+ * Simplified WO: "[C] 8113-314/26 - M28803 - TOP BEARING COVER"
+ * Detailed WO:   "[C] 8113-314/26 - M28803 - TOP BEARING COVER"
+ * Detailed OP:   description only (formattedDescription from server)
+ * Detailed MAT:  "M28803 - TOP BEARING COVER" (partId bold)
+ */
+function buildLabel(node, isDetailed) {
+  const nodeType = node.nodeType;
+
+  // OP nodes — just show the description (e.g. "10 LASER [Laser Cutter]")
+  if (isDetailed && nodeType === "OP") {
+    return <span>{node.description}</span>;
+  }
+
+  // MAT nodes — "partId - description"
+  if (isDetailed && nodeType === "MAT") {
+    const parts = [];
+    if (node.partId) {
+      parts.push(
+        <span key="pid" className="font-bold">
+          {node.partId}
+        </span>,
+      );
+    }
+    if (node.description) {
+      if (parts.length > 0) parts.push(<span key="sep1"> - </span>);
+      parts.push(<span key="desc">{node.description}</span>);
+    }
+    return <>{parts}</>;
+  }
+
+  // WO nodes (both simplified and detailed)
+  const parts = [];
+  if (node.status) {
+    parts.push(
+      <span key="st" className="text-gray-500">
+        {node.status}{" "}
+      </span>,
+    );
+  }
+  if (node.formattedId) {
+    parts.push(<span key="fid">{node.formattedId}</span>);
+  }
+  if (node.partId) {
+    parts.push(<span key="sep1"> - </span>);
+    parts.push(
+      <span key="pid" className="font-bold">
+        {node.partId}
+      </span>,
+    );
+  }
+  if (node.description) {
+    parts.push(<span key="sep2"> - </span>);
+    parts.push(<span key="desc">{node.description}</span>);
+  }
+  return <>{parts}</>;
+}
+
 export default function BOMTreeNode({
   node,
   depth,
@@ -82,7 +142,7 @@ export default function BOMTreeNode({
           )}
 
           {/* Label */}
-          <span className="truncate">{node.label}</span>
+          <span className="truncate">{buildLabel(node, isDetailed)}</span>
         </div>
 
         {/* Right section — data columns, always at same position */}

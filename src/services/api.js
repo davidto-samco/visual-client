@@ -213,23 +213,23 @@ export const inventoryApi = {
 
 /**
  * Recursively convert simplified tree nodes from server shape → BOMTree shape.
- * Server node: { subId, partId, partDescription, orderQty, status,
- *               formattedStatus, formattedId, startDate, finishDate, children }
- * BOMTree node: { id, label, quantity, details, dateRange, children }
+ *
+ * Now passes status, formattedId, partId, description as separate fields
+ * so BOMTreeNode can render them individually (status at start, partId bold).
  */
 function normalizeBOMNode(node) {
-  const labelParts = [node.formattedId];
-  if (node.partDescription) labelParts.push(node.partDescription);
-
   const dates = [node.startDate, node.finishDate]
     .filter(Boolean)
-    .map((d) => d.substring(0, 10)); // trim to YYYY-MM-DD
+    .map((d) => d.substring(0, 10));
 
   return {
     id: node.subId ?? node.formattedId ?? Math.random().toString(36),
-    label: labelParts.join(" - "),
+    status: node.formattedStatus ?? "",
+    formattedId: node.formattedId ?? "",
+    partId: node.partId ?? "",
+    description: node.partDescription ?? "",
     quantity: node.orderQty ?? 1,
-    details: node.formattedStatus ?? node.status ?? "",
+    details: "",
     dateRange: dates.join(" → "),
     children: (node.children ?? []).map(normalizeBOMNode),
   };
@@ -239,25 +239,25 @@ function normalizeBOMNode(node) {
  * Recursively convert detailed tree nodes from server shape → BOMTree shape.
  * Preserves nodeType so the UI can color-code OP vs MAT vs WO.
  *
- * Detailed server nodes have nodeType: "WO" | "OP" | "MAT"
- *   WO  → formattedId + partDescription, orderQty, dates
- *   OP  → formattedDescription (seq + resource), no quantity
- *   MAT → formattedPart (partId - description), qty, dimensions
+ * Now passes status, formattedId, partId, description as separate fields.
  */
 function normalizeDetailedBOMNode(node) {
   const nodeType = node.nodeType ?? "WO";
 
-  let label = "";
+  let status = node.formattedStatus ?? "";
+  let formattedId = "";
+  let partId = "";
+  let description = "";
   let quantity = null;
-  let details = node.formattedStatus ?? node.status ?? "";
+  let details = "";
   let dateRange = "";
   let id = "";
 
   switch (nodeType) {
     case "WO": {
-      const labelParts = [node.formattedId];
-      if (node.partDescription) labelParts.push(node.partDescription);
-      label = labelParts.join(" - ");
+      formattedId = node.formattedId ?? "";
+      partId = node.partId ?? "";
+      description = node.partDescription ?? "";
       quantity = node.orderQty ?? null;
       const dates = [node.startDate, node.finishDate]
         .filter(Boolean)
@@ -267,21 +267,20 @@ function normalizeDetailedBOMNode(node) {
       break;
     }
     case "OP": {
-      label = node.formattedDescription ?? `OP ${node.opSeq}`;
+      description = node.formattedDescription ?? `OP ${node.opSeq}`;
       id = `op-${node.subId}-${node.opSeq}`;
       break;
     }
     case "MAT": {
-      label =
-        node.formattedPart ??
-        `${node.partId ?? "?"} - ${node.partDescription ?? "Unknown"}`;
+      partId = node.partId ?? "";
+      description = node.partDescription ?? "Unknown";
       quantity = node.qty ?? null;
-      details = node.dimensions ?? details;
+      details = node.dimensions ?? "";
       id = `mat-${node.subId}-${node.opSeq}-${node.pieceNo}`;
       break;
     }
     default: {
-      label = node.formattedId ?? "Unknown";
+      description = node.formattedId ?? "Unknown";
       id = Math.random().toString(36);
     }
   }
@@ -289,7 +288,10 @@ function normalizeDetailedBOMNode(node) {
   return {
     id,
     nodeType,
-    label,
+    status,
+    formattedId,
+    partId,
+    description,
     quantity,
     details,
     dateRange,
