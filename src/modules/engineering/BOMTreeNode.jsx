@@ -54,50 +54,49 @@ export default function BOMTreeNode({
       <div
         className={`flex items-baseline cursor-pointer ${colorClasses}
           ${node.selected ? "bg-blue-600 text-white" : ""}`}
-        style={{ paddingLeft: `${indent + 8}px` }}
         onClick={handleClick}
       >
-        {/* Expand/collapse indicator — simple text arrow */}
-        <span className="w-4 shrink-0 text-gray-400 select-none">
-          {hasChildren ? (expanded ? "▾" : "▸") : " "}
+        {/* Left section — fixed width, indent lives inside */}
+        <div
+          className="flex items-baseline min-w-0"
+          style={{ width: 800, flexShrink: 0, paddingLeft: `${indent + 8}px` }}
+        >
+          {/* Expand/collapse indicator */}
+          <span className="w-4 shrink-0 text-gray-400 select-none">
+            {hasChildren ? (expanded ? "▾" : "▸") : " "}
+          </span>
+
+          {/* Node type badge for detailed mode */}
+          {isDetailed && node.nodeType && (
+            <span
+              className={`w-8 shrink-0 text-[10px] font-bold mr-1.5 text-center rounded px-0.5 ${
+                node.nodeType === "OP"
+                  ? "bg-green-200 text-green-800"
+                  : node.nodeType === "MAT"
+                    ? "bg-red-200 text-red-800"
+                    : "bg-blue-200 text-blue-800"
+              }`}
+            >
+              {node.nodeType}
+            </span>
+          )}
+
+          {/* Label */}
+          <span className="truncate">{node.label}</span>
+        </div>
+
+        {/* Right section — data columns, always at same position */}
+        <span className="w-16 text-right shrink-0 tabular-nums">
+          {node.quantity != null ? node.quantity.toFixed(4) : ""}
         </span>
 
-        {/* Node type badge for detailed mode */}
-        {isDetailed && node.nodeType && (
-          <span
-            className={`w-8 shrink-0 text-[10px] font-bold mr-1.5 text-center rounded px-0.5 ${
-              node.nodeType === "OP"
-                ? "bg-green-200 text-green-800"
-                : node.nodeType === "MAT"
-                  ? "bg-red-200 text-red-800"
-                  : "bg-blue-200 text-blue-800"
-            }`}
-          >
-            {node.nodeType}
-          </span>
-        )}
-
-        {/* Description column — the main text */}
-        <span className="flex-1 truncate pr-4">{node.label}</span>
-
-        {/* Quantity */}
-        {node.quantity != null && (
-          <span className="w-20 text-right shrink-0 tabular-nums">
-            {node.quantity?.toFixed(4)}
-          </span>
-        )}
-
-        {/* Details */}
         <span className="w-24 text-right shrink-0 truncate text-gray-500 pl-2">
           {node.details || ""}
         </span>
 
-        {/* Date range */}
-        {node.dateRange && (
-          <span className="w-64 text-right shrink-0 text-gray-500 pl-2">
-            {node.dateRange}
-          </span>
-        )}
+        <span className="w-48 text-right shrink-0 text-gray-500 pl-2">
+          {node.dateRange || ""}
+        </span>
       </div>
 
       {/* Children — recursion */}
