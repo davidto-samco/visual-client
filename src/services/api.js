@@ -295,6 +295,7 @@ function normalizeDetailedBOMNode(node) {
     quantity,
     details,
     dateRange,
+    pieceNo: nodeType === "MAT" ? (node.pieceNo ?? null) : undefined,
     children: (node.children ?? []).map(normalizeDetailedBOMNode),
   };
 }

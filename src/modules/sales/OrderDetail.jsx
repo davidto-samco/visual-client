@@ -15,10 +15,10 @@ export default function OrderDetail({ order }) {
           <Button variant="outline" size="sm">
             Print Preview
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" disabled="true">
             Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" disabled="true">
             Save as PDF
           </Button>
         </div>

@@ -38,6 +38,9 @@ function buildLabel(node, isDetailed) {
   // MAT nodes — "partId - description"
   if (isDetailed && nodeType === "MAT") {
     const parts = [];
+    if (node.pieceNo != null) {
+      parts.push(<span key="seq">{node.pieceNo} </span>);
+    }
     if (node.partId) {
       parts.push(
         <span key="pid" className="font-bold">
@@ -45,9 +48,21 @@ function buildLabel(node, isDetailed) {
         </span>,
       );
     }
-    if (node.description) {
-      if (parts.length > 0) parts.push(<span key="sep1"> - </span>);
+    if (node.description && node.description !== "Unknown") {
+      if (node.partId || node.pieceNo != null)
+        parts.push(<span key="sep1"> - </span>);
       parts.push(<span key="desc">{node.description}</span>);
+    }
+    if (
+      !node.partId &&
+      (!node.description || node.description === "Unknown") &&
+      node.pieceNo == null
+    ) {
+      parts.push(
+        <span key="unk" className="italic text-gray-400">
+          No part info
+        </span>,
+      );
     }
     return <>{parts}</>;
   }
