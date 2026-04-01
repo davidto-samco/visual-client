@@ -43,6 +43,8 @@ function normalizeOrderSummary(o) {
  */
 function normalizeOrderDetail(o) {
   const shipTo = o.customer?.shipTo ?? {};
+  const billTo = o.customer?.billTo ?? {};
+
   const soldToLines = [
     o.customer?.name,
     shipTo.address1,
@@ -78,14 +80,37 @@ function normalizeOrderDetail(o) {
     currency: o.currencyId ?? "CDN",
     contact: o.contact?.fullName ?? "",
     contactPhone: o.contact?.phone ?? "",
+    contactFax: o.contact?.fax ?? "",
     terms: o.termsDescription ?? "",
     soldToAddress: soldToLines.join("\n"),
     salesRep: o.salesRep?.name ?? "",
     quoteId: o.quoteId ?? "",
+    revisionDate: o.revisionDate ?? "",
+    revisionNumber: o.revisionNumber ?? "",
+    billTo: {
+      name: billTo.name ?? o.customer?.name ?? "",
+      address1: billTo.address1 ?? "",
+      address2: billTo.address2 ?? "",
+      address3: billTo.address3 ?? "",
+      city: billTo.city ?? "",
+      state: billTo.state ?? "",
+      zipCode: billTo.zipCode ?? "",
+      country: billTo.country ?? "",
+    },
+    shipTo: {
+      name: o.customer?.name ?? "",
+      address1: shipTo.address1 ?? "",
+      address2: shipTo.address2 ?? "",
+      city: shipTo.city ?? "",
+      state: shipTo.state ?? "",
+      zipCode: shipTo.zipCode ?? "",
+      country: shipTo.country ?? "",
+    },
     lineItems,
     subtotal,
     tax: o.tax?.taxAmount ?? 0,
     taxRate: o.tax?.taxPercent ? `${o.tax.taxPercent}%` : "0",
+    taxLabel: o.tax?.salesTaxGroupId ?? "",
     freight: 0,
     grandTotal: o.totalAmount ?? subtotal,
     total: o.tax?.totalWithTax ?? o.totalAmount ?? subtotal,

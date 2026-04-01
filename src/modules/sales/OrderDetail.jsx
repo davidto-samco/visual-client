@@ -1,9 +1,15 @@
+import { useState } from "react";
 import OrderHeader from "./OrderHeader";
 import OrderLineItems from "./OrderLineItems";
 import OrderTotals from "./OrderTotals";
+import OrderAcknowledgementPrint from "./OrderAcknowledgementPrint";
+import { useOrderPrint } from "./useOrderPrint";
 import { Button } from "@/components/ui/button";
 
 export default function OrderDetail({ order }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const { printOrder } = useOrderPrint();
+
   return (
     <div className="p-4 space-y-4">
       {/* Action bar: Print Preview, Print, Save as PDF */}
@@ -12,26 +18,34 @@ export default function OrderDetail({ order }) {
           Order Acknowledgement — Job #{order.jobNumber}
         </h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            Print Preview
+          <Button
+            variant={showPreview ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowPreview((p) => !p)}
+          >
+            {showPreview ? "Close Preview" : "Print Preview"}
           </Button>
-          <Button variant="outline" size="sm" disabled="true">
+          <Button variant="outline" size="sm" onClick={() => printOrder(order)}>
             Print
-          </Button>
-          <Button variant="outline" size="sm" disabled="true">
-            Save as PDF
           </Button>
         </div>
       </div>
 
-      {/* Order header — two-column layout */}
-      <OrderHeader order={order} />
+      {showPreview ? (
+        /* Print preview — shows the exact PDF layout in an iframe */
+        <OrderAcknowledgementPrint order={order} />
+      ) : (
+        <>
+          {/* Order header — two-column layout */}
+          <OrderHeader order={order} />
 
-      {/* Line items grid */}
-      <OrderLineItems lineItems={order.lineItems} />
+          {/* Line items grid */}
+          <OrderLineItems lineItems={order.lineItems} />
 
-      {/* Totals footer */}
-      <OrderTotals order={order} />
+          {/* Totals footer */}
+          <OrderTotals order={order} />
+        </>
+      )}
     </div>
   );
 }
