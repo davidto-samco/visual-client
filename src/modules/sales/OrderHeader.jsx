@@ -8,6 +8,7 @@ export default function OrderHeader({ order }) {
         <Row label="Order Date" value={order.date} />
         <Row label="Job Number" value={order.jobNumber} />
         <Row label="Customer PO" value={order.poNumber} />
+        <Row label="Quote ID" value={order.quoteId} />
         <Row label="Status" value={order.status} />
         <Row label="Customer" value={order.customerName} />
         <Row label="Contact" value={order.contact} />

@@ -21,12 +21,29 @@ export default function SalesPage() {
     setSalesInitialized,
   } = useAppStore();
 
+  const loadRecentOrders = useCallback(async () => {
+    setSalesListLoading(true);
+    try {
+      const records = await salesApi.getRecentOrders(200);
+      setSalesOrders(records);
+      const currentSelection = useAppStore.getState().salesSelectedOrderId;
+      if (records.length > 0 && !currentSelection) {
+        setSalesSelectedOrderId(records[0].id);
+      }
+      setSalesInitialized(true);
+    } catch {
+      // silently fail
+    } finally {
+      setSalesListLoading(false);
+    }
+  }, [setSalesListLoading, setSalesOrders, setSalesSelectedOrderId, setSalesInitialized]);
+
   // Only load on first visit — skip if already initialized
   useEffect(() => {
     if (!salesInitialized) {
       loadRecentOrders();
     }
-  }, []);
+  }, [loadRecentOrders, salesInitialized]);
 
   // Load full order detail whenever selection changes
   useEffect(() => {
@@ -39,23 +56,11 @@ export default function SalesPage() {
       .getOrder(salesSelectedOrderId)
       .then(setSalesSelectedOrder)
       .catch(() => {});
-  }, [salesSelectedOrderId]);
-
-  async function loadRecentOrders() {
-    setSalesListLoading(true);
-    try {
-      const records = await salesApi.getRecentOrders(200);
-      setSalesOrders(records);
-      if (records.length > 0 && !salesSelectedOrderId) {
-        setSalesSelectedOrderId(records[0].id);
-      }
-      setSalesInitialized(true);
-    } catch {
-      // silently fail
-    } finally {
-      setSalesListLoading(false);
-    }
-  }
+  }, [
+    salesSelectedOrderId,
+    salesSelectedOrder?.jobNumber,
+    setSalesSelectedOrder,
+  ]);
 
   const handleFilter = useCallback(
     async (startDate, endDate) => {
@@ -72,7 +77,13 @@ export default function SalesPage() {
         setSalesListLoading(false);
       }
     },
-    [salesActiveFilters],
+    [
+      salesActiveFilters,
+      setSalesActiveFilters,
+      setSalesListLoading,
+      setSalesOrders,
+      setSalesSelectedOrderId,
+    ],
   );
 
   const handleSearch = useCallback(
@@ -101,14 +112,20 @@ export default function SalesPage() {
         setSalesListLoading(false);
       }
     },
-    [salesActiveFilters],
+    [
+      salesActiveFilters,
+      setSalesActiveFilters,
+      setSalesListLoading,
+      setSalesOrders,
+      setSalesSelectedOrderId,
+    ],
   );
 
   const handleClear = useCallback(() => {
     setSalesActiveFilters({});
     setSalesInitialized(false); // force reload
     loadRecentOrders();
-  }, []);
+  }, [setSalesActiveFilters, setSalesInitialized, loadRecentOrders]);
 
   return (
     <div className="h-full flex flex-col gap-3">
