@@ -11,6 +11,8 @@ export function AppStoreProvider({ children }) {
   const [salesActiveFilters, setSalesActiveFilters] = useState({});
   const [salesListLoading, setSalesListLoading] = useState(false);
   const [salesInitialized, setSalesInitialized] = useState(false);
+  const [salesSelectedQuote, setSalesSelectedQuote] = useState(null);
+  const [salesQuoteView, setSalesQuoteView] = useState(false);
 
   // ── Inventory ─────────────────────────────────────────────────────────────
   const [inventorySearchResults, setInventorySearchResults] = useState([]);
@@ -44,6 +46,10 @@ export function AppStoreProvider({ children }) {
         setSalesListLoading,
         salesInitialized,
         setSalesInitialized,
+        salesSelectedQuote,
+        setSalesSelectedQuote,
+        salesQuoteView,
+        setSalesQuoteView,
 
         // Inventory
         inventorySearchResults,

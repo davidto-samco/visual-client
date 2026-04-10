@@ -19,6 +19,8 @@ export default function SalesPage() {
     setSalesListLoading,
     salesInitialized,
     setSalesInitialized,
+    setSalesSelectedQuote,
+    setSalesQuoteView,
   } = useAppStore();
 
   const loadRecentOrders = useCallback(async () => {
@@ -36,7 +38,12 @@ export default function SalesPage() {
     } finally {
       setSalesListLoading(false);
     }
-  }, [setSalesListLoading, setSalesOrders, setSalesSelectedOrderId, setSalesInitialized]);
+  }, [
+    setSalesListLoading,
+    setSalesOrders,
+    setSalesSelectedOrderId,
+    setSalesInitialized,
+  ]);
 
   // Only load on first visit — skip if already initialized
   useEffect(() => {
@@ -48,6 +55,11 @@ export default function SalesPage() {
   // Load full order detail whenever selection changes
   useEffect(() => {
     if (!salesSelectedOrderId) return;
+
+    // Reset quote view when switching orders
+    setSalesQuoteView(false);
+    setSalesSelectedQuote(null);
+
     // Already have this order loaded — skip
     if (salesSelectedOrder?.jobNumber === salesSelectedOrderId) return;
 
@@ -60,6 +72,8 @@ export default function SalesPage() {
     salesSelectedOrderId,
     salesSelectedOrder?.jobNumber,
     setSalesSelectedOrder,
+    setSalesQuoteView,
+    setSalesSelectedQuote,
   ]);
 
   const handleFilter = useCallback(

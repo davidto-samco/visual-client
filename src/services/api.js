@@ -117,6 +117,68 @@ function normalizeOrderDetail(o) {
   };
 }
 
+/**
+ * Maps server quote document → QuoteDetail shape
+ * Server: { quoteId, status, quoteDate, expirationDate, currency, customer,
+ *           contact, salesRep, description, terms, lineItems, totalPrice,
+ *           formattedTotalPrice, linkedOrders, lineItemCount }
+ */
+function normalizeQuoteDetail(q) {
+  const cust = q.customer ?? {};
+  const addressLines = [
+    cust.name,
+    cust.address1,
+    cust.address2,
+    cust.address3,
+    [cust.city, cust.state, cust.zipCode].filter(Boolean).join(", "),
+    cust.country,
+  ].filter(Boolean);
+
+  const lineItems = (q.lineItems ?? []).map((li) => ({
+    line: li.lineNumber,
+    qty: li.quantity,
+    description: li.description ?? "",
+    partId: li.partId ?? "",
+    customerPartId: li.customerPartId ?? "",
+    unitPrice: li.unitPrice ?? 0,
+    extension: li.lineTotal ?? 0,
+    formattedUnitPrice: li.formattedUnitPrice ?? "",
+    formattedExtension: li.formattedLineTotal ?? "",
+    sellingUm: li.sellingUm ?? "",
+    extendedDescription: li.extendedDescription ?? null,
+  }));
+
+  return {
+    quoteId: q.quoteId ?? "",
+    status: q.status ?? "",
+    quoteDate: q.quoteDate ?? "",
+    expirationDate: q.expirationDate ?? "",
+    currency: q.currency ?? "USD",
+    customerName: cust.name ?? "",
+    customerId: cust.customerId ?? "",
+    customerAddress: addressLines.join("\n"),
+    contact: q.contact?.fullName ?? "",
+    contactPhone: q.contact?.phone ?? "",
+    contactFax: q.contact?.fax ?? "",
+    contactPosition: q.contact?.position ?? "",
+    salesRep: q.salesRep?.name ?? "",
+    description: q.description ?? "",
+    terms: q.terms?.description ?? "",
+    shipVia: q.terms?.shipVia ?? "",
+    fob: q.terms?.freeOnBoard ?? "",
+    freightTerms: q.terms?.freightTerms ?? "",
+    leadTimeWeeks: q.terms?.quotedLeadtimeWeeks ?? null,
+    lineItems,
+    totalPrice: q.totalPrice ?? 0,
+    formattedTotalPrice: q.formattedTotalPrice ?? "$0.00",
+    linkedOrders: (q.linkedOrders ?? []).map((o) => ({
+      customerOrderId: o.customerOrderId ?? "",
+      createDate: o.createDate ?? "",
+    })),
+    lineItemCount: q.lineItemCount ?? lineItems.length,
+  };
+}
+
 export const salesApi = {
   /** Load recent orders (no filters) */
   async getRecentOrders(limit = 200) {
@@ -152,6 +214,14 @@ export const salesApi = {
       `/api/sales/orders/${encodeURIComponent(jobNumber)}`,
     );
     return normalizeOrderDetail(json.data);
+  },
+
+  /** Full quote document by quote ID */
+  async getQuote(quoteId) {
+    const json = await request(
+      `/api/sales/quotes/${encodeURIComponent(quoteId)}`,
+    );
+    return normalizeQuoteDetail(json.data);
   },
 };
 

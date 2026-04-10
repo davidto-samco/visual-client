@@ -1,4 +1,4 @@
-export default function OrderHeader({ order }) {
+export default function OrderHeader({ order, onQuoteClick }) {
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="border border-gray-200 rounded-lg p-4 space-y-1.5 text-sm bg-gray-50/50">
@@ -8,7 +8,21 @@ export default function OrderHeader({ order }) {
         <Row label="Order Date" value={order.date} />
         <Row label="Job Number" value={order.jobNumber} />
         <Row label="Customer PO" value={order.poNumber} />
-        <Row label="Quote ID" value={order.quoteId} />
+        <Row
+          label="Quote ID"
+          value={
+            order.quoteId ? (
+              <span
+                className="text-blue-600 underline decoration-dotted underline-offset-2 cursor-pointer hover:decoration-solid hover:text-blue-700"
+                onClick={() => onQuoteClick?.(order.quoteId)}
+              >
+                {order.quoteId}
+              </span>
+            ) : (
+              ""
+            )
+          }
+        />
         <Row label="Status" value={order.status} />
         <Row label="Customer" value={order.customerName} />
         <Row label="Contact" value={order.contact} />
