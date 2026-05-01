@@ -300,6 +300,13 @@ export const inventoryApi = {
       meta: json.meta ?? {},
     };
   },
+
+  async getPurchaseHistory(partId) {
+    const json = await request(
+      `/api/inventory/parts/${encodeURIComponent(partId)}/purchase-history`,
+    );
+    return Array.isArray(json.data) ? json.data : [];
+  },
 };
 
 // ---------------------------------------------------------------------------
