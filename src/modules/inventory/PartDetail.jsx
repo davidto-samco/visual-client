@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PartInfoTab from "./tabs/PartInfoTab";
+import SpecificationsTab from "./cards/SpecificationsCard";
 import WhereUsedTab from "./tabs/WhereUsedTab";
 import PurchaseHistoryTab from "./tabs/PurchaseHistoryTab";
 

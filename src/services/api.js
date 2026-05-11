@@ -248,6 +248,10 @@ function normalizePart(p) {
     available: p.qtyAvailable ?? 0,
     onOrder: p.qtyOnOrder ?? 0,
     inDemand: p.qtyInDemand ?? 0,
+    preferredVendorId: p.preferredVendorId ?? "",
+    preferredVendorName: p.preferredVendorName ?? "",
+    manufacturer: p.manufacturer ?? "",
+    manufacturerPartId: p.manufacturerPartId ?? "",
     preferredVendor: p.preferredVendorName ?? "",
     vendorId: p.preferredVendorId ?? "",
     status: p.status ?? "",
@@ -306,6 +310,13 @@ export const inventoryApi = {
       `/api/inventory/parts/${encodeURIComponent(partId)}/purchase-history`,
     );
     return Array.isArray(json.data) ? json.data : [];
+  },
+
+  async getSpecifications(partId) {
+    const json = await request(
+      `/api/inventory/parts/${encodeURIComponent(partId)}/specifications`,
+    );
+    return json.data?.specifications ?? null;
   },
 };
 
