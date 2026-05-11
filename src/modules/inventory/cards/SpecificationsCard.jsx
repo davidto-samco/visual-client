@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { inventoryApi } from "@/services/api";
 
-export default function SpecificationsTab({ part }) {
+export default function SpecificationsCard({ part }) {
   const [state, setState] = useState({
     text: null,
     loading: false,
